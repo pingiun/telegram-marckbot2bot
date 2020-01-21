@@ -1,27 +1,53 @@
 from telegram.ext import Updater, CallbackContext, CommandHandler, MessageHandler, Filters
-from telegram import Update
+from telegram import Update, Bot, Message
 
 import os
 import re
 import logging
+import signal
+
+from assign import AssignHandler
+
+BOT_USERNAME = 'marckbot2bot'
 
 
 def error_handler(update: Update, context: CallbackContext):
-    logging.warning(f'Update {update} caused error {context.error}')
+    logging.warning(f'Error: {context.error} caused by {update}')
 
 
 def substitute(update: Update, context: CallbackContext):
     try:
-        match = context.matches[1]
-        replace = context.matches[2]
+        match = context.matches[0].group(1)
+        replace = context.matches[0].group(2)
 
-        logging.info('match: %s - replace: %s', match, replace)
+        logging.debug('match: %s - replace: %s', match, replace)
 
         substituted = re.sub(match, replace, update.message.reply_to_message.text)
 
         context.bot.sendMessage(update.message.chat.id, substituted)
     except AttributeError as e:
         logging.warning(e)
+
+
+def send_define_message(bot: Bot, message: Message, chat: str):
+    """Send a message that was /assign'ed and stored in the database"""
+
+    if message.text:
+        bot.sendMessage(chat, message.text)
+    elif message.audio:
+        bot.sendAudio(chat, message.audio.file_id)
+    elif message.sticker:
+        bot.sendSticker(chat, message.sticker.file_id)
+    else:
+        caption = message.caption
+        if message.document:
+            bot.sendDocument(chat, message.document.file_id, caption=caption)
+        elif message.photo:
+            bot.sendPhoto(chat, message.photo[0].file_id, caption=caption)
+        elif message.video:
+            bot.sendVideo(chat, message.video.file_id, caption=caption)
+        elif message.voice:
+            bot.sendVoice(chat, message.voice.file_id, caption=caption)
 
 
 def main():
@@ -32,11 +58,20 @@ def main():
 
     dispatcher.add_error_handler(error_handler)
 
-    # dispatcher.add_handler(CommandHandler('/assign', None))
-    # dispatcher.add_handler(CommandHandler('/unassign', None))
-    # dispatcher.add_handler(CommandHandler('/defines', None))
+    assign_handler = AssignHandler(BOT_USERNAME, send_define_message)
+
+    dispatcher.add_handler(CommandHandler('assign', assign_handler.assign))
+    dispatcher.add_handler(CommandHandler('unassign', assign_handler.unassign))
+    dispatcher.add_handler(CommandHandler('defines', assign_handler.defines))
     dispatcher.add_handler(MessageHandler(Filters.regex(r's/(.+)/(.*)/'), substitute))
-    # dispatcher.add_handler(MessageHandler(Filters.regex('/.+'), None))
+    dispatcher.add_handler(MessageHandler(Filters.regex(r'/(.+)'), assign_handler.handle_command))
+
+    def stop(_signal, _frame):
+        logging.info('Received SIGINT, shutting down')
+        assign_handler.close()
+        updater.stop()
+
+    signal.signal(signal.SIGINT, stop)
 
     updater.start_polling()
 
