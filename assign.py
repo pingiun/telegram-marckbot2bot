@@ -35,6 +35,8 @@ class AssignHandler:
 
         existing = self.cursor.execute('SELECT 1 FROM defines WHERE name=? AND chat=?', (name, chat)).fetchone()
         if existing is None:
+            if message.text:
+                message.text = message.text_markdown_v2_urled
             encoded_message = jsonpickle.encode(message)
             self.cursor.execute('INSERT INTO defines (name, chat, message) VALUES (?, ?, ?)',
                                 (name, chat, encoded_message))

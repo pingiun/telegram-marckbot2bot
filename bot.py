@@ -44,7 +44,7 @@ def send_define_message(bot: Bot, message: Message, chat: str):
     """Send a message that was /assign'ed and stored in the database"""
 
     if message.text:
-        bot.sendMessage(chat, message.text)
+        bot.sendMessage(chat, message.text, parse_mode=ParseMode.MARKDOWN_V2)
     elif message.audio:
         bot.sendAudio(chat, message.audio.file_id)
     elif message.sticker:
