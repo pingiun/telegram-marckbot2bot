@@ -5,9 +5,10 @@ import jsonpickle
 
 import sqlite3
 import logging
+import os
 from typing import Callable, Optional
 
-DB_PATH = 'defines.db'
+DB_PATH = os.path.join(os.getenv('STATE_DIRECTORY', ''), 'defines.db')
 
 
 class AssignHandler:
