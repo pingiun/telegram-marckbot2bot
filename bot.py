@@ -1,5 +1,7 @@
+#!/usr/bin/env python3
+
 from telegram.ext import Updater, CallbackContext, CommandHandler, MessageHandler, Filters
-from telegram import Update, Bot, Message
+from telegram import Update, Bot, Message, ParseMode
 
 import os
 import re
@@ -17,14 +19,25 @@ def error_handler(update: Update, context: CallbackContext):
 
 def substitute(update: Update, context: CallbackContext):
     try:
-        match = context.matches[0].group(1)
-        replace = context.matches[0].group(2)
+        match = context.matches[0].group(2)
+        replace = context.matches[0].group(3)
+        flags = context.matches[0].group(4) or ''
+        useflags = 0
+        count = 0
 
         logging.debug('match: %s - replace: %s', match, replace)
 
-        substituted = re.sub(match, replace, update.message.reply_to_message.text)
+        if 'f' in flags.lower():
+            # Only replace first
+            count = 1
+        if 'i' in flags.lower():
+            useflags = re.IGNORECASE
+        if 'm' in flags.lower():
+            useflags |= re.MULTILINE
 
-        context.bot.sendMessage(update.message.chat.id, substituted)
+        substituted = re.sub(match, replace, update.message.reply_to_message.text_markdown_v2_urled, count=count, flags=useflags)
+
+        context.bot.sendMessage(update.message.chat.id, substituted, parse_mode=ParseMode.MARKDOWN_V2)
     except AttributeError as e:
         logging.warning(e)
 
@@ -33,7 +46,7 @@ def send_define_message(bot: Bot, message: Message, chat: str):
     """Send a message that was /assign'ed and stored in the database"""
 
     if message.text:
-        bot.sendMessage(chat, message.text)
+        bot.sendMessage(chat, message.text, parse_mode=ParseMode.MARKDOWN_V2)
     elif message.audio:
         bot.sendAudio(chat, message.audio.file_id)
     elif message.sticker:
@@ -63,8 +76,8 @@ def main():
     dispatcher.add_handler(CommandHandler('assign', assign_handler.assign))
     dispatcher.add_handler(CommandHandler('unassign', assign_handler.unassign))
     dispatcher.add_handler(CommandHandler('defines', assign_handler.defines))
-    dispatcher.add_handler(MessageHandler(Filters.regex(r's/(.+)/(.*)/'), substitute))
-    dispatcher.add_handler(MessageHandler(Filters.regex(r'/(.+)'), assign_handler.handle_command))
+    dispatcher.add_handler(MessageHandler(Filters.regex(r'^s([^\\\n])(.*)\1(.*)\1([giImM]+)?$'), substitute))
+    dispatcher.add_handler(MessageHandler(Filters.regex(r'^/([\S]+)$'), assign_handler.handle_command))
 
     def stop(_signal, _frame):
         logging.info('Received SIGINT, shutting down')
