@@ -1,5 +1,5 @@
 from telegram.ext import Updater, CallbackContext, CommandHandler, MessageHandler, Filters
-from telegram import Update, Bot, Message
+from telegram import Update, Bot, Message, ParseMode
 
 import os
 import re
@@ -33,9 +33,9 @@ def substitute(update: Update, context: CallbackContext):
         if 'm' in flags.lower():
             useflags |= re.MULTILINE
 
-        substituted = re.sub(match, replace, update.message.reply_to_message.text, count=count, flags=useflags)
+        substituted = re.sub(match, replace, update.message.reply_to_message.text_markdown_v2_urled, count=count, flags=useflags)
 
-        context.bot.sendMessage(update.message.chat.id, substituted)
+        context.bot.sendMessage(update.message.chat.id, substituted, parse_mode=ParseMode.MARKDOWN_V2)
     except AttributeError as e:
         logging.warning(e)
 
