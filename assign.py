@@ -107,7 +107,10 @@ class AssignHandler:
 
             definition = self._get_definition(command_name, chat)
             if definition is not None:
-                self.send_message_function(context.bot, definition, chat)
+                reply_to = None
+                if message.reply_to_message:
+                    reply_to = message.reply_to_message.message_id
+                self.send_message_function(context.bot, definition, chat, reply_to=reply_to)
 
         except AttributeError as e:
             self.logger.warning(e)
