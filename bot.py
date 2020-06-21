@@ -76,7 +76,7 @@ def main():
     dispatcher.add_handler(CommandHandler('assign', assign_handler.assign))
     dispatcher.add_handler(CommandHandler('unassign', assign_handler.unassign))
     dispatcher.add_handler(CommandHandler('defines', assign_handler.defines))
-    dispatcher.add_handler(MessageHandler(Filters.regex(r'^s([^\\\n])(.*)\1(.*)\1([giImM]+)?$'), substitute))
+    dispatcher.add_handler(MessageHandler(Filters.regex(r'^s([^\\\n])(.*)\1(.*)\1([fiImM]+)?$'), substitute))
     dispatcher.add_handler(MessageHandler(Filters.regex(r'^/([\S]+)$'), assign_handler.handle_command))
 
     def stop(_signal, _frame):
