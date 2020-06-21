@@ -42,25 +42,29 @@ def substitute(update: Update, context: CallbackContext):
         logging.warning(e)
 
 
-def send_define_message(bot: Bot, message: Message, chat: str):
+def send_define_message(bot: Bot, message: Message, chat: str, reply_to: int = None):
     """Send a message that was /assign'ed and stored in the database"""
 
+    reply_to_message_id = {}
+    if reply_to is not None:
+        reply_to_message_id = {"reply_to_message_id": reply_to}
+
     if message.text:
-        bot.sendMessage(chat, message.text, parse_mode=ParseMode.MARKDOWN_V2)
+        bot.sendMessage(chat, message.text, parse_mode=ParseMode.MARKDOWN_V2, **reply_to_message_id)
     elif message.audio:
-        bot.sendAudio(chat, message.audio.file_id)
+        bot.sendAudio(chat, message.audio.file_id, **reply_to_message_id)
     elif message.sticker:
-        bot.sendSticker(chat, message.sticker.file_id)
+        bot.sendSticker(chat, message.sticker.file_id, **reply_to_message_id)
     else:
         caption = message.caption
         if message.document:
-            bot.sendDocument(chat, message.document.file_id, caption=caption)
+            bot.sendDocument(chat, message.document.file_id, caption=caption, **reply_to_message_id)
         elif message.photo:
-            bot.sendPhoto(chat, message.photo[0].file_id, caption=caption)
+            bot.sendPhoto(chat, message.photo[0].file_id, caption=caption, **reply_to_message_id)
         elif message.video:
-            bot.sendVideo(chat, message.video.file_id, caption=caption)
+            bot.sendVideo(chat, message.video.file_id, caption=caption, **reply_to_message_id)
         elif message.voice:
-            bot.sendVoice(chat, message.voice.file_id, caption=caption)
+            bot.sendVoice(chat, message.voice.file_id, caption=caption, **reply_to_message_id)
 
 
 def main():
