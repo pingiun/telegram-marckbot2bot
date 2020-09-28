@@ -8,6 +8,8 @@ import re
 import logging
 import signal
 
+import bf
+
 from assign import AssignHandler
 
 BOT_USERNAME = 'marckbot2bot'
@@ -66,6 +68,26 @@ def send_define_message(bot: Bot, message: Message, chat: str, reply_to: int = N
         elif message.voice:
             bot.sendVoice(chat, message.voice.file_id, caption=caption, **reply_to_message_id)
 
+def run_brainfuck(update: Update, context: CallbackContext):
+    if update.message.reply_to_message:
+        code = update.message.reply_to_message.text
+        try:
+            inp = update.message.text.split(None, 1)[1]
+        except IndexError:
+            inp = ""
+    else:
+        try:
+            code = update.message.text.split(None, 1)[1]
+            inp = ""
+        except IndexError:
+            code = False
+    
+    if not code:
+        update.message.reply_text("Reply /bf to a message containing brainfuck, an argument to the command will be used as stdin. You can also do /bf <code> to run this code directly.")
+    
+    out = bf.execute(code, inp)
+    if out:
+        update.message.reply_text(out)
 
 def main():
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -80,6 +102,7 @@ def main():
     dispatcher.add_handler(CommandHandler('assign', assign_handler.assign))
     dispatcher.add_handler(CommandHandler('unassign', assign_handler.unassign))
     dispatcher.add_handler(CommandHandler('defines', assign_handler.defines))
+    dispatcher.add_handler(CommandHandler('bf', run_brainfuck))
     dispatcher.add_handler(MessageHandler(Filters.regex(r'^s([^\\\n])(.*)\1(.*)\1([fiImM]+)?$'), substitute))
     dispatcher.add_handler(MessageHandler(Filters.regex(r'^/([\S]+)$'), assign_handler.handle_command))
 
