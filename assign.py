@@ -92,6 +92,24 @@ class AssignHandler:
 
         except AttributeError as e:
             self.logger.warning(e)
+    def reassign(self, update: Update, context: CallbackContext):
+        """Handle the /reassign command"""
+        try:
+            message = update.message
+
+            words = message.text.split()
+            if len(words) != 2:
+                return
+
+            if not message.reply_to_message:
+                return
+
+            command_name = words[1]
+            self._remove_definition(command_name, message.chat.id)
+            self._add_definition(command_name, message.reply_to_message, message.chat.id)
+
+        except AttributeError as e:
+            self.logger.warning(e)
 
     def handle_command(self, update: Update, context: CallbackContext):
         """Handle assigned commands"""
