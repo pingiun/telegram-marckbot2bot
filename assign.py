@@ -131,7 +131,7 @@ class AssignHandler:
                 user_name = 'unknown user'
             msg += f'<code>{bonks}</code> {user_name}\n'
         print(msg)
-        context.bot.send_message(chat_id=chat_id, text=msg, parse_mode=ParseMode.HTML)
+        context.bot.send_message(chat_id=chat_id, text=msg, parse_mode=ParseMode.HTML, disable_notification=True)
 
     def handle_command(self, update: Update, context: CallbackContext):
         """Handle assigned commands"""
