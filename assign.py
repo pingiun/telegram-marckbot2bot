@@ -1,5 +1,5 @@
 from telegram.ext import CallbackContext
-from telegram import Update, Message, Bot
+from telegram import Update, Message, Bot, ParseMode
 
 import jsonpickle
 
@@ -22,6 +22,7 @@ class AssignHandler:
         self.cursor = self.db.cursor()
 
         self.cursor.execute('CREATE TABLE IF NOT EXISTS defines (name TEXT, chat TEXT, message TEXT)')
+        self.cursor.execute('CREATE TABLE IF NOT EXISTS bonks (user_id TEXT, chat_id TEXT, bonks NUMERIC)')
 
         self.db.commit()
 
@@ -111,6 +112,27 @@ class AssignHandler:
         except AttributeError as e:
             self.logger.warning(e)
 
+    def increase_bonk(self, user_id, chat_id):
+        row = self.cursor.execute('SELECT bonks FROM bonks WHERE user_id=? AND chat_id=?', (user_id, chat_id)).fetchone()
+        if row is None:
+            row = [0]
+
+        self.cursor.execute('INSERT INTO bonks (user_id, chat_id, bonks) VALUES (?, ?, ?)', (user_id, chat_id, row[0] + 1))
+        self.db.commit()
+
+    def handle_bonks(self, update: Update, context: CallbackContext):
+        chat_id = update.effective_chat.id
+        msg = ''
+        for user_id, chat_id, bonks in self.cursor.execute('SELECT user_id, chat_id, bonks FROM bonks WHERE chat_id=? ORDER BY bonks DESC LIMIT 10', (chat_id,)):
+            try:
+                user = context.bot.get_chat_member(chat_id, user_id)
+                user_name = user.user.mention_html()
+            except:
+                user_name = 'unknown user'
+            msg += f'<code>{bonks}</code> {user_name}\n'
+        print(msg)
+        context.bot.send_message(chat_id=chat_id, text=msg, parse_mode=ParseMode.HTML)
+
     def handle_command(self, update: Update, context: CallbackContext):
         """Handle assigned commands"""
 
@@ -119,6 +141,9 @@ class AssignHandler:
             if command_name.endswith(self.bot_username):
                 length = len(self.bot_username)
                 command_name = command_name[:-length]
+
+            if command_name == 'bonk' and update.message.reply_to_message:
+                self.increase_bonk(update.message.reply_to_message.from_user.id, update.effective_chat.id)
 
             message = update.message
             chat = message.chat.id

@@ -106,6 +106,7 @@ def main():
     dispatcher.add_handler(CommandHandler('unassign', assign_handler.unassign))
     dispatcher.add_handler(CommandHandler('reassign', assign_handler.reassign))
     dispatcher.add_handler(CommandHandler('defines', assign_handler.defines))
+    dispatcher.add_handler(CommandHandler('bonks', assign_handler.handle_bonks))
     dispatcher.add_handler(CommandHandler('bf', run_brainfuck))
     dispatcher.add_handler(MessageHandler(Filters.regex(r'^s([^\\\n])(.*)\1(.*)\1([fiImM]+)?$'), substitute))
     dispatcher.add_handler(MessageHandler(Filters.regex(r'^/([\S]+)$'), assign_handler.handle_command))
